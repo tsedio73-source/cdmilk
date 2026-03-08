@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Records</title>
+    <style>
+        body { font-family: Helvetica, sans-serif; background: #f4f4f4; padding: 20px; padding-bottom: 120px; margin: 0; }
+        .header { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h2 { margin: 0; font-size: 20px; }
+        .grid { display: flex; flex-direction: column; gap: 15px; }
+        .card { 
+            background: white; border-radius: 12px; padding: 15px; 
+            border-left: 5px solid #5F6BEF; box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .card p { margin: 4px 0; font-size: 14px; color: #444; }
+        .card .val { font-weight: bold; color: #000; float: right; }
+        
+        .btn-copy { 
+            width: 100%; padding: 12px; background: #5F6BEF; color: white; 
+            border: none; border-radius: 8px; font-weight: bold; margin-top: 10px;
+        }
+
+        .loading-box { text-align: center; padding: 50px; color: #666; }
+
+        /* Bottom Summary */
+        .bottom-summary {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: #1a1a1a; color: white; padding: 15px;
+            display: flex; justify-content: space-around;
+            border-top: 3px solid #5F6BEF;
+        }
+        .summary-item { text-align: center; }
+        .summary-item b { display: block; font-size: 18px; color: #4ade80; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h2>Live Records: <span id="userNameDisp" style="color:#5F6BEF;">...</span></h2>
+        <button class="btn-copy" onclick="copyAllRecords()">Copy Report</button>
+    </div>
+
+    <div id="loading" class="loading-box">🔄Loading...</div>
+    <div id="data-list" class="grid"></div>
+
+    <div class="bottom-summary">
+        <div class="summary-item">Total Weight <b id="grandWeight">0.00 kg</b></div>
+        <div class="summary-item">Total Amount <b id="grandAmount">₹0.00</b></div>
+    </div>
+
+    <script>
+        const scriptURL = 'https://script.google.com/macros/s/AKfycby8EUcL7pVk0exlN3PUV_Q-EjZ8clo4HqfaQjUOZ-sK-7kEdJrq5JMFJnwX1BoKEaWHAw/exec'
+        async function fetchLiveRecords() {
+            const container = document.getElementById('data-list');
+            const loading = document.getElementById('loading');
+            
+            // LocalStorage se user details lein
+            const name = localStorage.getItem('username');
+            const code = localStorage.getItem('code');
+            document.getElementById('userNameDisp').innerText = name;
+
+            if (!name || !code) {
+                container.innerHTML = "<p style='text-align:center;'>User not logged in!</p>";
+                loading.style.display = "none";
+                return;
+            }
+
+            try {
+                // GS se data fetch karein (doGet call)
+                const response = await fetch(`${scriptURL}?name=${name}&code=${code}`);
+                const records = await response.json();
+
+                loading.style.display = "none";
+
+                if (records.length === 0) {
+                    container.innerHTML = "<p style='text-align:center;'>No records found in your sheet.</p>";
+                    return;
+                }
+
+                let totalW = 0;
+                let totalA = 0;
+
+                // Sort: Latest entries first
+                records.reverse();
+
+                records.forEach(data => {
+                    let w = parseFloat(data.weight) || 0;
+                    let amt = parseFloat(data.totalamount) || 0;
+
+                    totalW += w;
+                    totalA += amt;
+
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `
+                      <p>Date: <span class="val">${formatDate(data.date)}</span></p>
+                        <p>Type: <span class="val">${data.type || 'N/A'}</span></p>
+                        <p>Weight: <span class="val">${w.toFixed(2)} kg</span></p>
+                         <p>Water: <span class="val">${data.water}%</span></p>
+                        <p>FAT/SNF: <span class="val">${data.fat}% / ${data.snf}</span></p>
+                        <p>Rate: <span class="val">₹${data.rate}</span></p>
+                        <p style="border-top:1px solid #eee; padding-top:5px; margin-top:5px; font-weight:bold;">
+                           Amount: <span class="val" style="color:#5F6BEF;">₹${amt.toFixed(2)}</span>
+                        </p>
+                    `;
+                    container.appendChild(card);
+                });
+
+                document.getElementById('grandWeight').innerText = totalW.toFixed(2) + " kg";
+                document.getElementById('grandAmount').innerText = "₹" + totalA.toFixed(2);
+
+            } catch (error) {
+                loading.innerText = "❌ Error fetching data. Please try again.";
+                console.error(error);
+            }
+        }
+
+        function copyAllRecords() {
+            const container = document.getElementById('data-list');
+            const text = container.innerText;
+            const tempInput = document.createElement('textarea');
+            tempInput.value = "MILK REPORT\n" + text;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            alert("Report copied to clipboard!");
+        }
+
+        window.onload = fetchLiveRecords;
+function formatDate(dateVal) {
+        if (!dateVal) return 'N/A';
+        const d = new Date(dateVal);
+        if (isNaN(d)) return dateVal; // Agar parse na ho toh as-is dikhao
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = String(d.getFullYear()).slice(-2);
+        return `${day}/${month}/${year}`;
+    }
+    </script>
+</body>
+</html>

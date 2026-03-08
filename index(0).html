@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Milk Database</title>
+  <style>
+  body {
+    font-family: Helvetica;
+    margin: 10px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-image: url(images.jpeg);
+    background-attachment: fixed;
+    overflow-x: hidden;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  @keyframes ye {
+    0%   { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  @keyframes ey {
+    0%   { transform: rotate(0deg); }
+    100% { transform: rotate(-360deg); }
+  }
+
+  .container {
+    transition: 1.5s;
+    animation: ye 15s linear infinite;
+    background-color: #0000002a;
+    height: 300px;
+    width: 300px;
+    border: 10px solid #FFFFFF;
+    border-radius: 50%;
+    margin: 0px;
+    padding: 15px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+
+  div:focus {
+    outline: none;
+    box-shadow: none;
+  }
+
+  .container div:active {
+    background: #59B5F7;
+  }
+
+  .container div {
+    animation: ey 15s linear infinite;
+    height: 50px;
+    box-shadow: 2px 2px 2px grey;
+    padding: 25px;
+    margin: 20px;
+    width: 50px;
+    background: #fff;
+    border-radius: 50%;
+    font-size: 0px;
+    display: flex;
+    color: white;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    text-decoration: none;
+  }
+
+  .upd {
+    margin-bottom: 30px;
+    height: 100%;
+    width: 100%;
+    background-color: #0000002a;
+    display: flex;
+    border-radius: 90px;
+  }
+
+  .upd span {
+    display: flex;
+    margin-left: 10px;
+    border-radius: 0px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    font-size: 25px;
+  }
+  </style>
+</head>
+<body>
+ <audio id="myAudio" autoplay loop><source src="Free_Fire_Battlegrounds_OST___Old_Theme_Song(256k)"></source></audio>
+
+
+
+
+  <h2 style="color:#fff;text-shadow:1px 1px 4px whitesmoke;font-family:cursive;font-weight:bold;">CD Milk</h2>
+
+  <div class="upd">
+    <span id="nrec" onclick="gonewrec()"
+      style="margin-right:140px;background:#0909092c;color:#fff;font-weight:800;">Loading... </span>
+    <span id="nrate"
+      style="color:#fff;font-weight:1000;margin-right:10px;background:#0909092c;" onclick="play()"></span>
+  </div>
+
+  <div class="container">
+    <div onclick="goadd()"><img height="70px" src="billing.png" alt=""></div>
+    <div onclick="goread()"><img height="70px" src="receipt.png" alt=""></div>
+    <div onclick="lock()"><img height="70px" src="user.png" alt=""></div>
+    <div onclick="goinfo()"><img height="70px" src="information.png" alt=""></div>
+  </div>
+
+  <p style="opacity:70%;position:absolute;top:600px;">&reg; Powered by Tsedio 2026</p>
+  <p style="opacity:70%;position:absolute;top:650px;">Version 1.2.0</p>
+
+<script>
+  const scriptURL = "https://script.google.com/macros/s/AKfycbwcca5zGgaYrLTWU2Yt2OI_62RrtB1JiF25OgKrMu9aHSLULL2yAxwibCOlGerBuH78JQ/exec";
+  
+  function gonewrec()     { window.location.href = "newreceipt.html";}
+  function goadd()        { window.location.href = "milk.html"; }
+  function goread()       { window.location.href = "read.html";}
+  function goinfo()       { window.location.href = "info.html";}
+
+  function lock() {
+    const pass  = localStorage.getItem("pin");
+    const enter = prompt("Enter PIN");
+    window.location.href = (enter == pass) ? "admin.html" : "index.html";
+  }
+
+  // ✅ Sheet se filtered count + amount fetch karna
+  async function load() {
+    const code     = localStorage.getItem("code");
+    const fromDate = localStorage.getItem("fromDate");
+    const toDate   = localStorage.getItem("toDate");
+   let eamt = localStorage.getItem("AMT");
+   let AMT = parseFloat(eamt);
+
+    try {
+        const res     = await fetch(`${scriptURL}?action=read&code=${code}`);
+        const allData = await res.json();
+
+        let filteredCount  = 0;
+        let filteredAmount = AMT || 0;
+
+        allData.forEach(r => {
+            const raw = String(r.entryid || '').trim();
+
+            // ✅ IST timezone (+5:30) se sahi date nikalo
+            const dateObj  = new Date(raw);
+            const istOffset = 330 * 60 * 1000;
+            const istDate  = new Date(dateObj.getTime() + istOffset);
+
+            const y = istDate.getUTCFullYear();
+            const m = String(istDate.getUTCMonth() + 1).padStart(2, '0');
+            const d = String(istDate.getUTCDate()).padStart(2, '0');
+            const entryDate = `${y}-${m}-${d}`;
+
+            if (fromDate && toDate && entryDate >= fromDate && entryDate <= toDate) {
+                filteredCount++;
+                filteredAmount += parseFloat(r.totalamount) || 0;
+            }
+        });
+        
+        document.getElementById("nrec").innerText  = filteredCount;
+        document.getElementById("nrate").innerText = "₹"+ filteredAmount.toFixed(2);
+
+    } catch (e) {
+        console.error("Load error:", e);
+        document.getElementById("nrec").innerText  = "?";
+        document.getElementById("nrate").innerText = "Err";
+    }
+}
+  // ✅ Page load hone par dono chalao
+  window.onload = () => {
+    load();
+  };
+</script>
+
+<script>
+    // 'click' ya 'touchstart' (mobile ke liye) dono par kaam karega
+    document.addEventListener('click', function() {
+        var audio = document.getElementById("myAudio");
+        
+        audio.play().then(() => {
+            console.log("Music shuru ho gaya!");
+        }).catch(error => {
+            console.log("Play karne mein error aaya:", error);
+        });
+
+    }, { once: true }); // '{ once: true }' se ye function sirf ek baar chalega
+</script>
+</body>
+</html>

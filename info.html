@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <style>
+        body {
+background-image:url('images.jpeg') ;
+
+ font-family: Helvetica; display: flex; flex-direction: column; align-items: center; }
+        .data2 { width: 320px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; background:#1686FF85 ; padding: 15px; border-radius: 20px; margin-top: 20px; }
+        .data2 span { display: flex; align-items: center; justify-content: center; height: 45px; border-radius: 20px; font-weight: bold; text-align: center; font-size: 14px; }
+        #newR, #newW, #newreceipt { background: #B3C556; }
+        #earn, #weight, #allreceipt { background: #FF9E00; }
+        #dateshow { font-size: 12px; background: #EBF6C385; }
+       
+    </style>
+</head>
+<body>
+    <div class="data2">
+        <span>Avl Amount:</span>
+        <span id="newR">₹0</span>
+
+        <span id="dateshow">Date Loading...</span>
+        <span id="newW">0kg</span>
+
+        <span>New Receipt:</span>
+        <span onclick="gonewrec()" id="newreceipt">0</span>
+
+        <span>Total Earning:</span>
+        <span id="earn">₹0</span>
+
+        <span>Total Supply:</span>
+        <span id="weight">0kg</span>
+
+        <span>All Receipt:</span>
+        <span id="allreceipt">0</span>
+    </div>
+
+    <script>
+        const scriptURL = "https://script.google.com/macros/s/AKfycbwcca5zGgaYrLTWU2Yt2OI_62RrtB1JiF25OgKrMu9aHSLULL2yAxwibCOlGerBuH78JQ/exec";
+        const code = localStorage.getItem("code");
+
+        function gonewrec() {
+            window.location.href = "newreceipt.html";
+        }
+
+        function formatDisplay(val) {
+            if (!val) return 'N/A';
+            const str = String(val).trim();
+            if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+                const [y, m, d] = str.split('-');
+                return `${d}/${m}/${y.slice(-2)}`;
+            }
+            return str;
+        }
+
+        // ✅ Har format ki date ko YYYY-MM-DD mein convert karo
+        function toYMD(val) {
+            if (!val) return null;
+            const str = String(val).trim();
+
+            // Already YYYY-MM-DD
+            if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+
+            // DD/MM/YY or DD/MM/YYYY
+            if (str.includes('/')) {
+                const p = str.split('/');
+                if (p.length === 3) {
+                    const d = p[0].padStart(2, '0');
+                    const m = p[1].padStart(2, '0');
+                    const y = p[2].length === 2 ? '20' + p[2] : p[2];
+                    return `${y}-${m}-${d}`;
+                }
+            }
+
+            // Date object ya kuch aur
+            const dt = new Date(val);
+            if (!isNaN(dt)) {
+                const y = dt.getFullYear();
+                const m = String(dt.getMonth() + 1).padStart(2, '0');
+                const d = String(dt.getDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
+            }
+
+            return null;
+        }
+
+        async function loadDashboardData() {
+            const fromDate = localStorage.getItem("fromDate");
+            const toDate   = localStorage.getItem("toDate");
+
+            if (!fromDate || !toDate) {
+                document.getElementById("dateshow").innerText = "No Filter Set";
+            } else {
+                document.getElementById("dateshow").innerText =
+                    `${formatDisplay(fromDate)} - ${formatDisplay(toDate)}`;
+            }
+
+            try {
+                const res     = await fetch(`${scriptURL}?action=read&code=${code}`);
+                const allData = await res.json();
+
+                // Debug: Console mein pehli entry dekho
+                if (allData.length > 0) {
+                    console.log("Sample row:", JSON.stringify(allData[0]));
+                    console.log("entryid:", allData[0].entryid);
+                    console.log("date:", allData[0].date);
+                }
+
+                let fullWeight = 0, fullAmount = 0;
+                let filteredWeight = 0, filteredAmount = 0, filteredCount = 0;
+
+                allData.forEach(r => {
+                    const rowW = parseFloat(r.weight)      || 0;
+                    const rowA = parseFloat(r.totalamount) || 0;
+                    
+                    // Orange: sab ka total
+                    fullWeight += rowW;
+                    fullAmount += rowA;
+
+                    // ✅ Filter: entryid pehle, phir date fallback
+                    const rowYMD = toYMD(r.entryid) || toYMD(r.date);
+
+                    if (rowYMD && fromDate && toDate) {
+                        if (rowYMD >= fromDate && rowYMD <= toDate) {
+                            filteredWeight += rowW;
+                            filteredAmount += rowA;
+                            filteredCount++;
+                        }
+                    }
+                });
+
+                // Green Boxes
+                document.getElementById("newR").innerText       = "₹" +filteredAmount.toFixed(2);
+                document.getElementById("newW").innerText       = filteredWeight.toFixed(2) + "kg";
+                document.getElementById("newreceipt").innerText = filteredCount;
+
+                // Orange Boxes
+                document.getElementById("earn").innerText       = "₹" + fullAmount.toFixed(2);
+                document.getElementById("weight").innerText     = fullWeight.toFixed(2) + "kg";
+                document.getElementById("allreceipt").innerText = allData.length;
+
+            } catch (e) {
+                console.error("Data Load Error:", e);
+            }
+        }
+
+        window.onload = () => {
+            loadDashboardData();
+            setInterval(loadDashboardData, 30000);
+        };
+    </script>
+</body>
+</html>
