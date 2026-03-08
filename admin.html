@@ -1,138 +1,371 @@
-<!DOCTlYPE html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings</title>
     <style>
-        body { font-family: sans-serif; padding: 15px; background-image: url(images.jpeg);background-attachment: fixed; }
-        .box, .box1{ background: #EBF6C385; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        input, button { padding: 10px; margin: 5px 0; width: 100%; box-sizing: border-box; }
-        button { background: #5F6BEF; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        .del-btn { background: #ff4d4d; padding: 5px; font-size: 12px; width: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
-        th, td { border-bottom: 1px solid #ddd; padding: 10px; text-align: left; }
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 50%, #e0f2f1 100%);
+            padding: 20px;
+            background-attachment: fixed;
+        }
+
+        h2.page-title {
+            text-align: center;
+            font-size: 22px;
+            font-weight: 800;
+            color: #2e7d32;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+        }
+
+        .box {
+            background: rgba(255,255,255,0.82);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 18px rgba(60,120,60,0.10);
+            margin-bottom: 18px;
+            border: 1.5px solid rgba(120,200,120,0.25);
+            transition: box-shadow 0.2s;
+        }
+        .box:hover { box-shadow: 0 8px 28px rgba(60,150,60,0.15); }
+
+        .box h3 {
+            font-size: 15px;
+            font-weight: 800;
+            color: #388e3c;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .box h3 .icon { font-size: 20px; }
+
+        label {
+            display: block;
+            font-size: 13px;
+            color: #555;
+            font-weight: 600;
+            margin-bottom: 4px;
+            margin-top: 10px;
+        }
+
+        input[type="date"],
+        input[type="number"],
+        input[type="text"] {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1.5px solid #c8e6c9;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: 'Nunito', sans-serif;
+            background: #f9fdf9;
+            color: #333;
+            margin-bottom: 6px;
+            outline: none;
+            transition: border 0.2s, box-shadow 0.2s;
+        }
+        input:focus {
+            border-color: #66bb6a;
+            box-shadow: 0 0 0 3px rgba(102,187,106,0.15);
+            background: #fff;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: transform 0.1s, box-shadow 0.2s, opacity 0.2s;
+            letter-spacing: 0.3px;
+        }
+        button:active { transform: scale(0.97); }
+
+        .btn-primary { background: linear-gradient(90deg, #43a047, #66bb6a); color: white; box-shadow: 0 3px 10px rgba(67,160,71,0.25); }
+        .btn-danger  { background: linear-gradient(90deg, #e53935, #ef5350); color: white; box-shadow: 0 3px 10px rgba(229,57,53,0.20); }
+        .btn-info    { background: linear-gradient(90deg, #1e88e5, #42a5f5); color: white; box-shadow: 0 3px 10px rgba(30,136,229,0.20); }
+        .btn-orange  { background: linear-gradient(90deg, #fb8c00, #ffa726); color: white; box-shadow: 0 3px 10px rgba(251,140,0,0.20); }
+
+        .row2 { display: flex; gap: 10px; }
+        .row2 button { flex: 1; }
+
+        /* Toast */
+        #toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: #323232;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 9999;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+            transition: transform 0.35s cubic-bezier(.4,2,.6,1), opacity 0.3s;
+            opacity: 0;
+            white-space: nowrap;
+        }
+        #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        #toast.success { background: #2e7d32; }
+        #toast.error   { background: #c62828; }
+        #toast.info    { background: #1565c0; }
+
+        /* Table */
+        .table-wrap { overflow-x: auto; margin-top: 14px; border-radius: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 360px; }
+        thead { background: linear-gradient(90deg, #e8f5e9, #f1f8e9); }
+        th { padding: 10px 8px; color: #388e3c; font-weight: 800; text-align: left; border-bottom: 2px solid #c8e6c9; }
+        td { padding: 9px 8px; border-bottom: 1px solid #f0f0f0; color: #333; vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #f9fdf9; }
+
+        .del-btn {
+            background: linear-gradient(90deg, #e53935, #ef5350);
+            color: white;
+            border: none;
+            border-radius: 7px;
+            padding: 5px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            width: auto;
+            margin: 0;
+            box-shadow: 0 2px 6px rgba(229,57,53,0.2);
+            font-family: 'Nunito', sans-serif;
+        }
+
+        .loading-row td { color: #888; font-style: italic; text-align: center; }
+
+        .amt-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 12px;
+        }
+        .amt-pos { background: #e8f5e9; color: #2e7d32; }
+        .amt-neg { background: #ffebee; color: #c62828; }
+
+        .status-bar {
+            background: rgba(232,245,233,0.9);
+            border: 1px solid #c8e6c9;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 12px;
+            color: #388e3c;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: #66bb6a; display: inline-block; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
     </style>
 </head>
 <body>
 
+<h2 class="page-title">⚙️ Settings</h2>
+
+<!-- Setting 1: Date Filter -->
 <div class="box">
-    <h3>Setting 1: Set Start Date</h3>
-    <label>Date start from
-        <input type="date" id="from">
-    </label>
-    <label>Until
-        <input type="date" id="till">
-    </label>
-    <button onclick="saveFilterDate()">Fix</button>
+    <h3><span class="icon">📅</span> Setting 1: Date Filter</h3>
+    <label>Start Date</label>
+    <input type="date" id="from">
+    <label>End Date</label>
+    <input type="date" id="till">
+    <button class="btn-primary" onclick="saveFilterDate()">✅ Save Date Filter</button>
 </div>
 
-<div class="box1">
-    <h3>Setting 2: Set PIN</h3>
-    <button onclick="delpin()" style="background:red;">Delete PIN</button>
-    <input type="number" placeholder="New PIN" id="pin">
+<!-- Setting 2: PIN -->
+<div class="box">
+    <h3><span class="icon">🔐</span> Setting 2: Set PIN</h3>
+    <label>New PIN</label>
+    <input type="number" placeholder="Enter new PIN" id="pin">
+    <label>Confirm PIN</label>
     <input type="number" placeholder="Confirm PIN" id="pinc">
-    <button onclick="savepin()">Change PIN</button>
-</div>
-<div class="box2">
-    <h3>Setting 3: Add or Subtract Amount</h3>
-    
-    <input type="number" placeholder="Write Amount" id="amt">
-    <button onclick="setamt()">Submit</button>
+    <div class="row2">
+        <button class="btn-danger" onclick="delpin()">🗑️ Delete PIN</button>
+        <button class="btn-primary" onclick="savepin()">💾 Save PIN</button>
+    </div>
 </div>
 
-<div class="box3">
-    <h3>Setting 4: GS Data Explorer</h3>
-    <button onclick="fetchGSData()" style="background:#28a745">Load / Refresh Live Data</button>
-    <table id="dataTable">
-        <thead>
-            <tr>
-                <th>Row</th>
-                <th>Date</th>
-                <th>Name</th>
-                <th>Amt</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody id="gs-body"></tbody>
-    </table>
+<!-- Setting 3: Amount -->
+<div class="box">
+    <h3><span class="icon">💰</span> Setting 3: Adjust Amount</h3>
+    <label>Amount (+ to add, − to subtract)</label>
+    <input type="number" placeholder="e.g. 100 or -50" id="amt">
+    <button class="btn-orange" onclick="setamt()">📤 Submit Amount</button>
 </div>
+
+<!-- Setting 4: GS Data Explorer -->
+<div class="box">
+    <h3><span class="icon">📊</span> Setting 4: GS Data Explorer</h3>
+    <div class="status-bar" id="statusBar" style="display:none">
+        <span class="dot"></span> <span id="statusText">Connected</span>
+    </div>
+    <button class="btn-info" onclick="fetchGSData()">🔄 Load / Refresh Live Data</button>
+    <div class="table-wrap">
+        <table id="dataTable">
+            <thead>
+                <tr>
+                    <th>Row</th>
+                    <th>Date</th>
+                    <th>Name</th>
+                    <th>Amount</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="gs-body">
+                <tr class="loading-row"><td colspan="5">Click "Load Data" to fetch records</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="toast"></div>
 
 <script>
-  function setamt(){
-    let amt = document.getElementById('amt').value;
-    localStorage.setItem("AMT",amt);
-    if(amt > 0){
-    alert("Added Amount")
-    }else if(amt < 0){
-    alert("Subtracted Amount")
-}else{
-
-}
-
-
-}
-    // Auto fill today
-    document.getElementById("till").valueAsDate = new Date();
-    document.getElementById("from").valueAsDate = new Date();
-
-    const scriptURL = "https://script.google.com/macros/s/AKfycbz7fMlrVjPyvMZMd2LjEI8Oq_APdYs6iGmFs7aCHGFeAYIpCvffutrB2tMumoUQDMT8/exec";
-    const userCode  = localStorage.getItem('code');
-
-    function delpin() {
-        localStorage.removeItem("pin");
-        alert("PIN deleted!");
-    }
-
-    function savepin() {
-        const pin  = document.getElementById("pin").value;
-        const pinc = document.getElementById("pinc").value;
-        if (!pin) { alert("PIN empty!"); return; }
-        if (pin === pinc) {
-            localStorage.setItem("pin", pin);
-            alert("✅ PIN saved!");
-        } else {
-            alert("⚠️ PINs do not match!");
+    // ── STORAGE HELPERS (works even when redirected / 3rd-party blocked) ──────
+    function safeSet(key, value) {
+        try { localStorage.setItem(key, value); } catch(e) {
+            try { sessionStorage.setItem(key, value); } catch(e2) {
+                _memStore[key] = value;
+            }
         }
     }
+    function safeGet(key) {
+        try {
+            let v = localStorage.getItem(key);
+            if (v !== null) return v;
+        } catch(e) {}
+        try {
+            let v = sessionStorage.getItem(key);
+            if (v !== null) return v;
+        } catch(e) {}
+        return _memStore[key] ?? null;
+    }
+    function safeRemove(key) {
+        try { localStorage.removeItem(key); } catch(e) {}
+        try { sessionStorage.removeItem(key); } catch(e) {}
+        delete _memStore[key];
+    }
+    const _memStore = {};   // in-memory fallback
 
+    // ── GET userCode FROM URL OR STORAGE (fix for redirect issue) ─────────────
+    const urlParams = new URLSearchParams(window.location.search);
+    const userCode  = urlParams.get('code') || safeGet('code') || '';
+    if (userCode) safeSet('code', userCode);   // persist for future
+
+    const scriptURL = "https://script.google.com/macros/s/AKfycbz7fMlrVjPyvMZMd2LjEI8Oq_APdYs6iGmFs7aCHGFeAYIpCvffutrB2tMumoUQDMT8/exec";
+
+    // ── TOAST ─────────────────────────────────────────────────────────────────
+    function toast(msg, type = 'success') {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = `show ${type}`;
+        clearTimeout(t._timer);
+        t._timer = setTimeout(() => { t.className = ''; }, 2800);
+    }
+
+    // ── AUTO FILL DATES ───────────────────────────────────────────────────────
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById("from").value = safeGet("fromDate") || today;
+    document.getElementById("till").value = safeGet("toDate")   || today;
+
+    // ── SETTING 1: DATE FILTER ────────────────────────────────────────────────
     function saveFilterDate() {
         const f = document.getElementById("from").value;
         const s = document.getElementById("till").value;
-        if (!f || !s) { alert("Select both dates!"); return; }
-        localStorage.setItem("fromDate", f); // YYYY-MM-DD
-        localStorage.setItem("toDate",   s); // YYYY-MM-DD
-        alert(`✅ Filter set: ${f} to ${s}`);
+        if (!f || !s) { toast("⚠️ Select both dates!", "error"); return; }
+        safeSet("fromDate", f);
+        safeSet("toDate",   s);
+        toast(`✅ Filter: ${f} → ${s}`, "success");
         fetchGSData();
     }
 
+    // ── SETTING 2: PIN ────────────────────────────────────────────────────────
+    function delpin() {
+        safeRemove("pin");
+        toast("🗑️ PIN deleted!", "info");
+    }
+    function savepin() {
+        const pin  = document.getElementById("pin").value.trim();
+        const pinc = document.getElementById("pinc").value.trim();
+        if (!pin)        { toast("⚠️ PIN cannot be empty!", "error"); return; }
+        if (pin !== pinc){ toast("⚠️ PINs do not match!",   "error"); return; }
+        safeSet("pin", pin);
+        toast("✅ PIN saved successfully!", "success");
+        document.getElementById("pin").value  = "";
+        document.getElementById("pinc").value = "";
+    }
+
+    // ── SETTING 3: AMOUNT ─────────────────────────────────────────────────────
+    function setamt() {
+        const amt = document.getElementById('amt').value;
+        if (amt === '') { toast("⚠️ Enter an amount!", "error"); return; }
+        safeSet("AMT", amt);
+        if      (Number(amt) > 0) toast(`➕ ₹${amt} added!`,      "success");
+        else if (Number(amt) < 0) toast(`➖ ₹${Math.abs(amt)} subtracted!`, "info");
+        else                      toast("Amount set to 0",         "info");
+    }
+
+    // ── SETTING 4: GS DATA ────────────────────────────────────────────────────
     async function fetchGSData() {
         const tbody = document.getElementById('gs-body');
-        tbody.innerHTML = "<tr><td colspan='5'>Loading...</td></tr>";
+        const statusBar = document.getElementById('statusBar');
+        tbody.innerHTML = "<tr class='loading-row'><td colspan='5'>⏳ Loading data...</td></tr>";
+        statusBar.style.display = 'flex';
+        document.getElementById('statusText').textContent = 'Fetching data…';
+
         try {
-            const res  = await fetch(`${scriptURL}?action=read&code=${userCode}`);
+            const res  = await fetch(`${scriptURL}?action=read&code=${encodeURIComponent(userCode)}`);
             const data = await res.json();
 
             tbody.innerHTML = "";
+            if (!data || data.length === 0) {
+                tbody.innerHTML = "<tr class='loading-row'><td colspan='5'>No records found.</td></tr>";
+                document.getElementById('statusText').textContent = 'No data';
+                return;
+            }
 
             // Latest first
             [...data].reverse().forEach(row => {
+                const amt   = parseFloat(row.totalamount || 0);
+                const cls   = amt >= 0 ? 'amt-pos' : 'amt-neg';
+                const sign  = amt >= 0 ? '+' : '';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${row.rownum}</td>
-                    <td>${row.date || row.entryid}</td>
+                    <td><b>${row.rownum}</b></td>
+                    <td>${row.date || row.entryid || '—'}</td>
                     <td>${row.name || 'Milk'}</td>
-                    <td>₹${parseFloat(row.totalamount || 0).toFixed(2)}</td>
-                    <td>
-                        <button class="del-btn"
-                            onclick="deleteEntry(${row.rownum})">
-                            Delete
-                        </button>
-                    </td>
+                    <td><span class="amt-badge ${cls}">₹${sign}${amt.toFixed(2)}</span></td>
+                    <td><button class="del-btn" onclick="deleteEntry(${row.rownum})">Delete</button></td>
                 `;
                 tbody.appendChild(tr);
             });
 
+            document.getElementById('statusText').textContent = `${data.length} records loaded`;
+            toast(`✅ ${data.length} records loaded`, "success");
+
         } catch(e) {
-            tbody.innerHTML = "<tr><td colspan='5' style='color:red'>❌ Error loading data.</td></tr>";
+            tbody.innerHTML = "<tr class='loading-row'><td colspan='5' style='color:#c62828'>❌ Error loading data. Check network.</td></tr>";
+            document.getElementById('statusText').textContent = 'Connection failed';
+            toast("❌ Failed to load data", "error");
             console.error(e);
         }
     }
@@ -140,12 +373,15 @@
     async function deleteEntry(rowNum) {
         if (!confirm(`Delete row ${rowNum} from Google Sheet?`)) return;
         try {
-            const res  = await fetch(`${scriptURL}?action=delete&code=${userCode}&row=${rowNum}`);
+            const res  = await fetch(`${scriptURL}?action=delete&code=${encodeURIComponent(userCode)}&row=${rowNum}`);
             const text = await res.text();
-            alert("✅ " + text);
-            fetchGSData(); // Refresh
+            toast("✅ Deleted! " + text, "success");
+            fetchGSData();
         } catch(e) {
-            alert("❌ Delete failed!");
+            toast("❌ Delete failed!", "error");
             console.error(e);
         }
     }
+</script>
+</body>
+</html>
