@@ -181,6 +181,33 @@
 
 <h2 class="page-title">⚙️ Settings</h2>
 
+<div class="box" id="login">
+    <h3><span class="icon"></span>Auth</h3>
+    <label>Authentication</label>
+    <input type="text" placeholder="Enter your Name" id="user" required>
+ <input type="number" placeholder="Enter your Code" id="code" required>
+    <button class="btn-orange" onclick="log()"> Log in</button>
+</div>
+
+<script>
+function log(){
+let user = document.getElementById("user").value;
+let code = document.getElementById("code").value;
+let log = local storage.getItem("log");
+
+if(log == "logged"){
+document.getElementById("login").style.display = "none";
+
+}else{
+localStorage.setItem("username",user);
+localStorage.setItem("code",code);
+localStorage.setItem("log","logged");
+
+}
+
+}
+</script>
+
 <!-- Setting 1: Date Filter -->
 <div class="box">
     <h3><span class="icon">📅</span> Setting 1: Date Filter</h3>
