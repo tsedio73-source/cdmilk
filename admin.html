@@ -193,15 +193,15 @@
 function log(){
 let user = document.getElementById("user").value;
 let code = document.getElementById("code").value;
-let log = local storage.getItem("log");
+let log = sessionStorage.getItem("log");
 
 if(log == "logged"){
 document.getElementById("login").style.display = "none";
 
 }else{
-localStorage.setItem("username",user);
-localStorage.setItem("code",code);
-localStorage.setItem("log","logged");
+sessionStorage.setItem("username",user);
+sessionStorage.setItem("code",code);
+sessionStorage.setItem("log","logged");
 
 }
 
