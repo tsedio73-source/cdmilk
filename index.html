@@ -136,9 +136,9 @@
 
   // ✅ Sheet se filtered count + amount fetch karna
   async function load() {
-    const code     = localStorage.getItem("code");
-    const fromDate = localStorage.getItem("fromDate");
-    const toDate   = localStorage.getItem("toDate");
+    const code     = sessionStorage.getItem("code");
+    const fromDate = sessionStorage.getItem("fromDate");
+    const toDate   = sessionStorage.getItem("toDate");
    let eamt = localStorage.getItem("AMT");
    let AMT = parseFloat(eamt);
 
