@@ -193,6 +193,19 @@
         });
 
     }, { once: true }); // '{ once: true }' se ye function sirf ek baar chalega
+
+
+function useradvice(){
+let auth = sessionStorage.getItem("log");
+if(!auth){
+window.location.href = "admin.html");
+alert("First,Please Login");
+}else{
+window.location.href = "index.html"
+}
+}
+}
+}
 </script>
 </body>
 </html>
