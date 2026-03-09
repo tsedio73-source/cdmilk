@@ -129,9 +129,7 @@
   function goinfo()       { window.location.href = "info.html";}
 
   function lock() {
-    const pass  = localStorage.getItem("pin");
-    const enter = prompt("Enter PIN");
-    window.location.href = (enter == pass) ? "admin.html" : "index.html";
+    window.location.href = "index.html";
   }
 
   // ✅ Sheet se filtered count + amount fetch karna
