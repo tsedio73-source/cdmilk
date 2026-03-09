@@ -50,18 +50,16 @@
 <script>
     const scriptURL = "https://script.google.com/macros/s/AKfycbzq81qLe8X5R2hYkfv3iHHqJNeCchZGmAxEou5QUZH96r7M69PgiAkT7HUaCcMyns442g/exec";
 
-    // ✅ Entry ID (YYYY-MM-DD) ya koi bhi format parse karna
+    // ── SIRF sessionStorage ───────────────────────────────────────────────────
+    function sGet(key) { try { return sessionStorage.getItem(key); } catch(e) { return null; } }
+
     function parseEntryDate(val) {
         if (!val) return null;
         const str = String(val).trim();
-
-        // YYYY-MM-DD (Column A - Entry ID format)
         if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
             const [y, m, d] = str.split('-');
             return new Date(+y, +m - 1, +d).getTime();
         }
-
-        // DD/MM/YY or DD/MM/YYYY
         if (str.includes('/')) {
             const parts = str.split('/');
             const day   = parseInt(parts[0]);
@@ -69,47 +67,31 @@
             const year  = parts[2].length === 2 ? 2000 + parseInt(parts[2]) : parseInt(parts[2]);
             return new Date(year, month, day).getTime();
         }
-
         const d = new Date(str);
         return isNaN(d) ? null : d.getTime();
     }
 
-    // ✅ Display: DD/MM/YY
-    // ✅ Display: DD/MM/YY format
-// ✅ Display: DD/MM/YY format (Updated)
-function formatDisplay(val) {
-    if (!val) return 'N/A';
-    const str = String(val).trim();
-
-    // Agar format YYYY-MM-DD hai (e.g. 2026-03-08)
-    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
-        const [y, m, d] = str.split('-');
-        // Format: DD/MM/YY
-        return `${d}/${m}/${y.slice(-2)}`;
+    function formatDisplay(val) {
+        if (!val) return 'N/A';
+        const str = String(val).trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+            const [y, m, d] = str.split('-');
+            return `${d}/${m}/${y.slice(-2)}`;
+        }
+        if (str.includes('/')) return str;
+        const dObj = new Date(str);
+        if (!isNaN(dObj)) {
+            const day   = String(dObj.getDate()).padStart(2, '0');
+            const month = String(dObj.getMonth() + 1).padStart(2, '0');
+            const year  = String(dObj.getFullYear()).slice(-2);
+            return `${day}/${month}/${year}`;
+        }
+        return str;
     }
-
-    // Agar date string slash wali hai (DD/MM/YY)
-    if (str.includes('/')) {
-        return str; // Ye pehle se hi sahi format hai
-    }
-
-    // Kisi bhi aur format ke liye standard conversion
-    const dObj = new Date(str);
-    if (!isNaN(dObj)) {
-        const day = String(dObj.getDate()).padStart(2, '0');
-        const month = String(dObj.getMonth() + 1).padStart(2, '0');
-        const year = String(dObj.getFullYear()).slice(-2);
-        return `${month}/${day}/${year}`;
-    }
-
-    return str; 
-}
-
-
 
     function copyAllRecords() {
-        const from = localStorage.getItem('fromDate');
-        const to   = localStorage.getItem('toDate');
+        const from = sGet('fromDate');
+        const to   = sGet('toDate');
         const text = document.getElementById('data-list').innerText;
         const ta   = document.createElement('textarea');
         ta.value   = `MILK REPORT\nFrom: ${formatDisplay(from)}  To: ${formatDisplay(to)}\n\n${text}`;
@@ -121,9 +103,10 @@ function formatDisplay(val) {
     }
 
     async function fetchRangeData() {
-        const fromDate = localStorage.getItem('fromDate'); // YYYY-MM-DD
-        const toDate   = localStorage.getItem('toDate');   // YYYY-MM-DD
-        const code     = localStorage.getItem('code');
+        // ── sirf sessionStorage se lo ─────────────────────────────────────────
+        const fromDate = sGet('fromDate');
+        const toDate   = sGet('toDate');
+        const code     = sGet('code');
 
         const container = document.getElementById('data-list');
         const loading   = document.getElementById('loading');
@@ -138,21 +121,18 @@ function formatDisplay(val) {
         document.getElementById("filterDisp").innerText = "";
 
         try {
-            const res     = await fetch(`${scriptURL}?action=read&code=${code}`);
+            const res     = await fetch(`${scriptURL}?action=read&code=${encodeURIComponent(code)}`);
             const allData = await res.json();
 
             loading.style.display = "none";
             container.innerHTML   = "";
 
-            // ✅ Start & End time set karo
             const [fy, fm, fd] = fromDate.split('-').map(Number);
             const [ty, tm, td] = toDate.split('-').map(Number);
             const start = new Date(fy, fm - 1, fd, 0, 0, 0).getTime();
             const end   = new Date(ty, tm - 1, td, 23, 59, 59).getTime();
 
-            // ✅ Filter: Entry ID (Column A = YYYY-MM-DD) se compare karo
             const filteredData = allData.filter(row => {
-                // entryid pehle try karo, phir date
                 const dateMs = parseEntryDate(row.entryid) || parseEntryDate(row.date);
                 if (!dateMs) return false;
                 return dateMs >= start && dateMs <= end;
@@ -176,16 +156,13 @@ function formatDisplay(val) {
 
                 const card = document.createElement("div");
                 card.className = "card";
-                
-
-
                 card.innerHTML = `
-                   <p>Date: <span class="val">${formatDisplay(row.date)}</span></p>
+                    <p>Date:   <span class="val">${formatDisplay(row.date)}</span></p>
                     <p>Type:   <span class="val">${row.type || 'N/A'}</span></p>
                     <p>FAT:    <span class="val">${row.fat || 0}%</span></p>
                     <p>SNF:    <span class="val">${row.snf || 0}</span></p>
                     <p>Water:  <span class="val">${row.water || 0}%</span></p>
-                     <p>Rate:  <span class="val">₹${row.rate || 0}</span></p>
+                    <p>Rate:   <span class="val">₹${row.rate || 0}</span></p>
                     <p>Weight: <span class="val">${w.toFixed(2)} kg</span></p>
                     <p style="border-top:1px solid #eee;padding-top:5px;margin-top:5px;">
                         Amount: <span class="val" style="color:#5F6BEF">₹${amt.toFixed(2)}/-</span>
