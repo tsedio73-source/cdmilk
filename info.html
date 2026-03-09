@@ -63,43 +63,27 @@
     <script>
         const scriptURL = "https://script.google.com/macros/s/AKfycbwcca5zGgaYrLTWU2Yt2OI_62RrtB1JiF25OgKrMu9aHSLULL2yAxwibCOlGerBuH78JQ/exec";
 
-        // ── STORAGE HELPERS ───────────────────────────────────────────────────
-        const _mem = {};
-        function safeGet(key) {
-            try { let v = localStorage.getItem(key);   if (v !== null) return v; } catch(e) {}
-            try { let v = sessionStorage.getItem(key); if (v !== null) return v; } catch(e) {}
-            return _mem[key] ?? null;
-        }
-        function safeSet(key, value) {
-            try { localStorage.setItem(key, value); return; } catch(e) {}
-            try { sessionStorage.setItem(key, value); return; } catch(e) {}
-            _mem[key] = value;
-        }
-        function safeClear() {
-            // Sirf app keys clear karo (code, fromDate, toDate, pin, AMT)
-            ['code','fromDate','toDate','pin','AMT'].forEach(k => {
-                try { localStorage.removeItem(k); } catch(e) {}
-                try { sessionStorage.removeItem(k); } catch(e) {}
-                delete _mem[k];
-            });
-        }
+        // ── ONLY sessionStorage (auto-clears on tab/browser close) ───────────
+        function sGet(key)        { try { return sessionStorage.getItem(key); }    catch(e) { return null; } }
+        function sSet(key, value) { try { sessionStorage.setItem(key, value); }    catch(e) {} }
+        function sClear()         { try { sessionStorage.clear(); }                catch(e) {} }
 
-        // ── CODE: URL se lao, purane se compare karo ─────────────────────────
+        // ── CODE: URL se lao (har baar naya code URL mein aana chahiye) ──────
         const urlParams  = new URLSearchParams(window.location.search);
         const urlCode    = urlParams.get('code');
-        const storedCode = safeGet('code');
+        const storedCode = sGet('code');
 
         let code = '';
 
         if (urlCode) {
             if (urlCode !== storedCode) {
-                // ✅ NAYA USER — purana data clear karo
-                safeClear();
-                console.log(`New user! Old: "${storedCode}" → New: "${urlCode}"`);
+                // Naya user — session saaf karo
+                sClear();
             }
             code = urlCode;
-            safeSet('code', code);
+            sSet('code', code);
         } else {
+            // URL mein code nahi — session se lo (same tab navigation)
             code = storedCode || '';
         }
 
@@ -145,8 +129,8 @@
 
         // ── MAIN LOAD ─────────────────────────────────────────────────────────
         async function loadDashboardData() {
-            const fromDate = safeGet("fromDate");
-            const toDate   = safeGet("toDate");
+            const fromDate = sGet("fromDate");
+            const toDate   = sGet("toDate");
 
             document.getElementById("dateshow").innerText =
                 (fromDate && toDate)
