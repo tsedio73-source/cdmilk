@@ -35,7 +35,6 @@
         #earn, #weight, #allreceipt { background: #FF9E00; }
         #dateshow { font-size: 12px; background: #EBF6C385; }
 
-        /* Loading shimmer */
         .loading { animation: shimmer 1.2s infinite alternate; }
         @keyframes shimmer { from { opacity: 1; } to { opacity: 0.4; } }
     </style>
@@ -64,7 +63,7 @@
     <script>
         const scriptURL = "https://script.google.com/macros/s/AKfycbwcca5zGgaYrLTWU2Yt2OI_62RrtB1JiF25OgKrMu9aHSLULL2yAxwibCOlGerBuH78JQ/exec";
 
-        // ── STORAGE HELPERS (redirect-safe) ──────────────────────────────────
+        // ── STORAGE HELPERS ───────────────────────────────────────────────────
         const _mem = {};
         function safeGet(key) {
             try { let v = localStorage.getItem(key);   if (v !== null) return v; } catch(e) {}
@@ -76,20 +75,40 @@
             try { sessionStorage.setItem(key, value); return; } catch(e) {}
             _mem[key] = value;
         }
+        function safeClear() {
+            // Sirf app keys clear karo (code, fromDate, toDate, pin, AMT)
+            ['code','fromDate','toDate','pin','AMT'].forEach(k => {
+                try { localStorage.removeItem(k); } catch(e) {}
+                try { sessionStorage.removeItem(k); } catch(e) {}
+                delete _mem[k];
+            });
+        }
 
-        // ── GET code FROM URL first, then storage ────────────────────────────
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code') || safeGet('code') || sessionStorage.getItem("code");
+        // ── CODE: URL se lao, purane se compare karo ─────────────────────────
+        const urlParams  = new URLSearchParams(window.location.search);
+        const urlCode    = urlParams.get('code');
+        const storedCode = safeGet('code');
 
-        if (code) safeSet('code', code);   // save for next time
+        let code = '';
 
-        // ── NAVIGATION ───────────────────────────────────────────────────────
+        if (urlCode) {
+            if (urlCode !== storedCode) {
+                // ✅ NAYA USER — purana data clear karo
+                safeClear();
+                console.log(`New user! Old: "${storedCode}" → New: "${urlCode}"`);
+            }
+            code = urlCode;
+            safeSet('code', code);
+        } else {
+            code = storedCode || '';
+        }
+
+        // ── NAVIGATION ────────────────────────────────────────────────────────
         function gonewrec() {
-            // Pass code via URL so newreceipt.html also gets it when redirected
             window.location.href = "newreceipt.html" + (code ? `?code=${code}` : '');
         }
 
-        // ── DATE FORMAT HELPERS ───────────────────────────────────────────────
+        // ── DATE HELPERS ──────────────────────────────────────────────────────
         function formatDisplay(val) {
             if (!val) return 'N/A';
             const str = String(val).trim();
@@ -120,14 +139,12 @@
             return null;
         }
 
-        // ── STOP SHIMMER ─────────────────────────────────────────────────────
         function stopLoading() {
             document.querySelectorAll('.loading').forEach(el => el.classList.remove('loading'));
         }
 
-        // ── MAIN LOAD FUNCTION ────────────────────────────────────────────────
+        // ── MAIN LOAD ─────────────────────────────────────────────────────────
         async function loadDashboardData() {
-            // Read dates from safe storage (works even after redirect)
             const fromDate = safeGet("fromDate");
             const toDate   = safeGet("toDate");
 
@@ -138,17 +155,13 @@
 
             if (!code) {
                 stopLoading();
-                console.warn("No user code found! Pass ?code=YOURCODE in URL.");
+                document.getElementById("dateshow").innerText = "❌ No User Code";
                 return;
             }
 
             try {
                 const res     = await fetch(`${scriptURL}?action=read&code=${encodeURIComponent(code)}`);
                 const allData = await res.json();
-
-                if (allData.length > 0) {
-                    console.log("Sample row:", JSON.stringify(allData[0]));
-                }
 
                 let fullWeight = 0, fullAmount = 0;
                 let filteredWeight = 0, filteredAmount = 0, filteredCount = 0;
@@ -170,12 +183,10 @@
                     }
                 });
 
-                // Green boxes (filtered)
                 document.getElementById("newR").innerText       = "₹" + filteredAmount.toFixed(2);
                 document.getElementById("newW").innerText       = filteredWeight.toFixed(2) + "kg";
                 document.getElementById("newreceipt").innerText = filteredCount;
 
-                // Orange boxes (all time)
                 document.getElementById("earn").innerText       = "₹" + fullAmount.toFixed(2);
                 document.getElementById("weight").innerText     = fullWeight.toFixed(2) + "kg";
                 document.getElementById("allreceipt").innerText = allData.length;
