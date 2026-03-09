@@ -102,7 +102,6 @@
         .row2 { display: flex; gap: 10px; }
         .row2 button { flex: 1; }
 
-        /* Toast */
         #toast {
             position: fixed;
             bottom: 30px;
@@ -125,7 +124,6 @@
         #toast.error   { background: #c62828; }
         #toast.info    { background: #1565c0; }
 
-        /* Table */
         .table-wrap { overflow-x: auto; margin-top: 14px; border-radius: 10px; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 360px; }
         thead { background: linear-gradient(90deg, #e8f5e9, #f1f8e9); }
@@ -185,28 +183,9 @@
     <h3><span class="icon"></span>Auth</h3>
     <label>Authentication</label>
     <input type="text" placeholder="Enter your Name" id="user" required>
- <input type="number" placeholder="Enter your Code" id="code" required>
+    <input type="number" placeholder="Enter your Code" id="code" required>
     <button class="btn-orange" onclick="log()"> Log in</button>
 </div>
-
-<script>
-function log(){
-let user = document.getElementById("user").value;
-let code = document.getElementById("code").value;
-let log = sessionStorage.getItem("log");
-
-if(log == "logged"){
-document.getElementById("login").style.display = "none";
-
-}else{
-sessionStorage.setItem("username",user);
-sessionStorage.setItem("code",code);
-sessionStorage.setItem("log","logged");
-
-}
-
-}
-</script>
 
 <!-- Setting 1: Date Filter -->
 <div class="box">
@@ -267,38 +246,44 @@ sessionStorage.setItem("log","logged");
 <div id="toast"></div>
 
 <script>
-    // ── STORAGE HELPERS (works even when redirected / 3rd-party blocked) ──────
-    function safeSet(key, value) {
-        try { localStorage.setItem(key, value); } catch(e) {
-            try { sessionStorage.setItem(key, value); } catch(e2) {
-                _memStore[key] = value;
-            }
-        }
-    }
-    function safeGet(key) {
-        try {
-            let v = localStorage.getItem(key);
-            if (v !== null) return v;
-        } catch(e) {}
-        try {
-            let v = sessionStorage.getItem(key);
-            if (v !== null) return v;
-        } catch(e) {}
-        return _memStore[key] ?? null;
-    }
-    function safeRemove(key) {
-        try { localStorage.removeItem(key); } catch(e) {}
-        try { sessionStorage.removeItem(key); } catch(e) {}
-        delete _memStore[key];
-    }
-    const _memStore = {};   // in-memory fallback
-
-    // ── GET userCode FROM URL OR STORAGE (fix for redirect issue) ─────────────
-    const urlParams = new URLSearchParams(window.location.search);
-    const userCode  = urlParams.get('code') || safeGet('code') || '';
-    if (userCode) safeSet('code', userCode);   // persist for future
-
     const scriptURL = "https://script.google.com/macros/s/AKfycbz7fMlrVjPyvMZMd2LjEI8Oq_APdYs6iGmFs7aCHGFeAYIpCvffutrB2tMumoUQDMT8/exec";
+
+    // ── SIRF sessionStorage — tab band = data clear ───────────────────────────
+    function sGet(key)        { try { return sessionStorage.getItem(key); }    catch(e) { return null; } }
+    function sSet(key, value) { try { sessionStorage.setItem(key, value); }    catch(e) {} }
+    function sRemove(key)     { try { sessionStorage.removeItem(key); }        catch(e) {} }
+
+    // userCode session se lo
+    let userCode = sGet('code') || '';
+
+    // ── LOGIN ─────────────────────────────────────────────────────────────────
+    function log() {
+        const user = document.getElementById("user").value.trim();
+        const code = document.getElementById("code").value.trim();
+
+        if (!user || !code) { toast("⚠️ Name aur Code dono bharo!", "error"); return; }
+
+        sSet("username", user);
+        sSet("code", code);
+        sSet("log", "logged");
+        userCode = code;
+
+        document.getElementById("login").style.display = "none";
+        toast("✅ Login successful!", "success");
+    }
+
+    // Agar already logged in hai to login box hide karo
+    window.addEventListener('DOMContentLoaded', () => {
+        if (sGet("log") === "logged") {
+            document.getElementById("login").style.display = "none";
+            userCode = sGet("code") || '';
+        }
+
+        // Auto fill saved dates
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById("from").value = sGet("fromDate") || today;
+        document.getElementById("till").value = sGet("toDate")   || today;
+    });
 
     // ── TOAST ─────────────────────────────────────────────────────────────────
     function toast(msg, type = 'success') {
@@ -309,33 +294,28 @@ sessionStorage.setItem("log","logged");
         t._timer = setTimeout(() => { t.className = ''; }, 2800);
     }
 
-    // ── AUTO FILL DATES ───────────────────────────────────────────────────────
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById("from").value = safeGet("fromDate") || today;
-    document.getElementById("till").value = safeGet("toDate")   || today;
-
     // ── SETTING 1: DATE FILTER ────────────────────────────────────────────────
     function saveFilterDate() {
         const f = document.getElementById("from").value;
         const s = document.getElementById("till").value;
         if (!f || !s) { toast("⚠️ Select both dates!", "error"); return; }
-        safeSet("fromDate", f);
-        safeSet("toDate",   s);
+        sSet("fromDate", f);
+        sSet("toDate",   s);
         toast(`✅ Filter: ${f} → ${s}`, "success");
         fetchGSData();
     }
 
     // ── SETTING 2: PIN ────────────────────────────────────────────────────────
     function delpin() {
-        safeRemove("pin");
+        sRemove("pin");
         toast("🗑️ PIN deleted!", "info");
     }
     function savepin() {
         const pin  = document.getElementById("pin").value.trim();
         const pinc = document.getElementById("pinc").value.trim();
-        if (!pin)        { toast("⚠️ PIN cannot be empty!", "error"); return; }
-        if (pin !== pinc){ toast("⚠️ PINs do not match!",   "error"); return; }
-        safeSet("pin", pin);
+        if (!pin)         { toast("⚠️ PIN cannot be empty!", "error"); return; }
+        if (pin !== pinc) { toast("⚠️ PINs do not match!",  "error"); return; }
+        sSet("pin", pin);
         toast("✅ PIN saved successfully!", "success");
         document.getElementById("pin").value  = "";
         document.getElementById("pinc").value = "";
@@ -345,19 +325,22 @@ sessionStorage.setItem("log","logged");
     function setamt() {
         const amt = document.getElementById('amt').value;
         if (amt === '') { toast("⚠️ Enter an amount!", "error"); return; }
-        safeSet("AMT", amt);
-        if      (Number(amt) > 0) toast(`➕ ₹${amt} added!`,      "success");
+        sSet("AMT", amt);
+        if      (Number(amt) > 0) toast(`➕ ₹${amt} added!`,               "success");
         else if (Number(amt) < 0) toast(`➖ ₹${Math.abs(amt)} subtracted!`, "info");
-        else                      toast("Amount set to 0",         "info");
+        else                      toast("Amount set to 0",                   "info");
     }
 
     // ── SETTING 4: GS DATA ────────────────────────────────────────────────────
     async function fetchGSData() {
-        const tbody = document.getElementById('gs-body');
+        const tbody     = document.getElementById('gs-body');
         const statusBar = document.getElementById('statusBar');
         tbody.innerHTML = "<tr class='loading-row'><td colspan='5'>⏳ Loading data...</td></tr>";
         statusBar.style.display = 'flex';
         document.getElementById('statusText').textContent = 'Fetching data…';
+
+        // userCode fresh lo (login ke baad update ho sakta hai)
+        userCode = sGet('code') || userCode;
 
         try {
             const res  = await fetch(`${scriptURL}?action=read&code=${encodeURIComponent(userCode)}`);
@@ -370,12 +353,11 @@ sessionStorage.setItem("log","logged");
                 return;
             }
 
-            // Latest first
             [...data].reverse().forEach(row => {
-                const amt   = parseFloat(row.totalamount || 0);
-                const cls   = amt >= 0 ? 'amt-pos' : 'amt-neg';
-                const sign  = amt >= 0 ? '+' : '';
-                const tr = document.createElement('tr');
+                const amt  = parseFloat(row.totalamount || 0);
+                const cls  = amt >= 0 ? 'amt-pos' : 'amt-neg';
+                const sign = amt >= 0 ? '+' : '';
+                const tr   = document.createElement('tr');
                 tr.innerHTML = `
                     <td><b>${row.rownum}</b></td>
                     <td>${row.date || row.entryid || '—'}</td>
@@ -399,6 +381,7 @@ sessionStorage.setItem("log","logged");
 
     async function deleteEntry(rowNum) {
         if (!confirm(`Delete row ${rowNum} from Google Sheet?`)) return;
+        userCode = sGet('code') || userCode;
         try {
             const res  = await fetch(`${scriptURL}?action=delete&code=${encodeURIComponent(userCode)}&row=${rowNum}`);
             const text = await res.text();
@@ -409,22 +392,6 @@ sessionStorage.setItem("log","logged");
             console.error(e);
         }
     }
-
-function saveToBothStorages() {
- let startDate =  localStorage.getItem("fromDate");
- let endDate =  localStorage.getItem("toDate");
-let code =  localStorage.getItem("code");
-let username =  localStorage.getItem("username");
- if(startDate && endDate){
-  sessionStorage.setItem("fromDate", startDate);
-  sessionStorage.setItem("toDate", endDate);
-sessionStorage.setItem("username", username);
-sessionStorage.setItem("code", code);
- console.log("Correct 💯")
-}
-}
-
-setInterval(saveToBothStorages,100)
 </script>
 </body>
 </html>
