@@ -56,8 +56,8 @@
             const loading = document.getElementById('loading');
             
             // LocalStorage se user details lein
-            const name = localStorage.getItem('username');
-            const code = localStorage.getItem('code');
+            const name = sessionStorage.getItem('username');
+            const code = sessionStorage.getItem('code');
             document.getElementById('userNameDisp').innerText = name;
 
             if (!name || !code) {
