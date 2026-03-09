@@ -413,9 +413,13 @@ sessionStorage.setItem("log","logged");
 function saveToBothStorages() {
  let startDate =  localStorage.getItem("fromDate");
  let endDate =  localStorage.getItem("toDate");
+let code =  localStorage.getItem("code");
+let username =  localStorage.getItem("username");
  if(startDate && endDate){
   sessionStorage.setItem("fromDate", startDate);
   sessionStorage.setItem("toDate", endDate);
+sessionStorage.setItem("username", username);
+sessionStorage.setItem("code", code);
  console.log("Correct 💯")
 }
 }
