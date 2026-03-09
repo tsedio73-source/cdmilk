@@ -79,7 +79,8 @@
 
         // ── GET code FROM URL first, then storage ────────────────────────────
         const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code') || safeGet('code') || '';
+        const code = urlParams.get('code') || safeGet('code') || sessionStorage.getItem("code");
+
         if (code) safeSet('code', code);   // save for next time
 
         // ── NAVIGATION ───────────────────────────────────────────────────────
