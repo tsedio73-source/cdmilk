@@ -134,15 +134,13 @@
 
         // ✅ DD/MM/YY banana - parts sahi order mein
         const parts = entryIdVal.split('-');
-        // parts[0]=2026, parts[1]=03, parts[2]=08
         const displayDate = `${parts[2]}/${parts[1]}/${parts[0].slice(-2)}`; // "08/03/26"
 
         const milkData = {
-            name:      localStorage.getItem('username') || "Guest",
-            code:      localStorage.getItem('code')     || "N/A",
-            // ✅ Column A: "2026-03-08"
-            date:      displayDate,  // ✅ Column B: "08/03/26"
-            timestamp: entryIdVal,  // ✅ Same DD/MM/YY
+            name:      sessionStorage.getItem('username') || "Guest",  // ✅ sessionStorage
+            code:      sessionStorage.getItem('code')     || "N/A",    // ✅ sessionStorage
+            date:      displayDate,
+            timestamp: entryIdVal,
             type:      document.getElementById('type').value,
             weight:    document.getElementById('weight').value,
             water:     document.getElementById('water').value,
