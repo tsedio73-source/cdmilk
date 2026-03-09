@@ -409,6 +409,18 @@ sessionStorage.setItem("log","logged");
             console.error(e);
         }
     }
+
+function saveToBothStorages() {
+ let startDate =  localStorage.getItem("fromDate");
+ let endDate =  localStorage.getItem("toDate");
+ if(startDate && endDate){
+  sessionStorage.setItem("fromDate", startDate);
+  sessionStorage.setItem("toDate", endDate);
+ console.log("Correct 💯")
+}
+}
+
+setInterval(saveToBothStorages,100)
 </script>
 </body>
 </html>
